@@ -7,9 +7,11 @@ public class Slingshot : MonoBehaviour
     public LineRenderer frontRope;
     public LineRenderer backRope;
 
-    public Transform bird;
+    public Transform currentBird;
     public Transform slingshotTarget;
     public Transform center;
+
+    public GameObject birdPrefab;
 
     public float throwForce;
     public float maxRopeSize;
@@ -39,15 +41,27 @@ public class Slingshot : MonoBehaviour
 
         if (Input.GetMouseButtonUp(0))
         {
-            birdRigidbody = bird.GetComponent<Rigidbody2D>();
-            birdRigidbody.isKinematic = false;
-            birdRigidbody.AddForce((slingshotTarget.position - center.position) * throwForce * -10);
-            targetLastPos = slingshotTarget.localPosition;
-            StartCoroutine(ResetSlingshot());
+            ThrowBird();
         }
     }
 
-    private IEnumerator ResetSlingshot()
+    private void ThrowBird()
+    {
+        birdRigidbody = currentBird.GetComponent<Rigidbody2D>();
+        birdRigidbody.isKinematic = false;
+        birdRigidbody.AddForce((slingshotTarget.position - center.position) * throwForce * -10);
+
+        targetLastPos = slingshotTarget.localPosition;
+        StartCoroutine(ResetSlingshot(true));
+    }
+
+    private void SpawnNewBird()
+    {
+        GameObject newBird = Instantiate(birdPrefab, slingshotTarget.position, birdPrefab.transform.rotation);
+        currentBird = newBird.transform;
+    }
+
+    private IEnumerator ResetSlingshot(bool spawnBirdAfterReset)
     {
         float resetTime = 0.1f;
         float elapsedTime = 0;
@@ -59,7 +73,11 @@ public class Slingshot : MonoBehaviour
             yield return null;
         }
 
-        yield return null;
+        if(spawnBirdAfterReset)
+        {
+            yield return new WaitForSeconds(1);
+            SpawnNewBird();
+        }
     }
 
     private void UpdateSlingshot()
@@ -71,7 +89,7 @@ public class Slingshot : MonoBehaviour
         //Update Bird Transform
         Vector2 direction = slingshotTarget.position - center.position;
         float angle = Mathf.Atan2(direction.y, direction.x);
-        bird.position = slingshotTarget.position - (new Vector3(Mathf.Cos(angle), Mathf.Sin(angle)) / 4);
-        bird.rotation = Quaternion.AngleAxis((angle * Mathf.Rad2Deg) - 180f, Vector3.forward);
+        currentBird.position = slingshotTarget.position - (new Vector3(Mathf.Cos(angle), Mathf.Sin(angle)) / 4);
+        currentBird.rotation = Quaternion.AngleAxis((angle * Mathf.Rad2Deg) - 180f, Vector3.forward);
     }
 }
